@@ -1,0 +1,54 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.539
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HydroDyanmicsCalculation", "HydroDyanmicsCalculation\HydroDyanmicsCalculation.vcxproj", "{75BE50AB-D6A1-4A94-ADA9-84CC1C07F98B}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Tests", "Tests\Tests.vcxproj", "{18BA08BF-99D1-4379-9E22-FAAEE1AF5C68}"
+	ProjectSection(ProjectDependencies) = postProject
+		{75BE50AB-D6A1-4A94-ADA9-84CC1C07F98B} = {75BE50AB-D6A1-4A94-ADA9-84CC1C07F98B}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HydroDynamicsRun", "HydroDynamicsRun\HydroDynamicsRun.vcxproj", "{5B409F02-AFC2-42B0-B5B3-58B55466B021}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{75BE50AB-D6A1-4A94-ADA9-84CC1C07F98B}.Debug|x64.ActiveCfg = Debug|x64
+		{75BE50AB-D6A1-4A94-ADA9-84CC1C07F98B}.Debug|x64.Build.0 = Debug|x64
+		{75BE50AB-D6A1-4A94-ADA9-84CC1C07F98B}.Debug|x86.ActiveCfg = Debug|Win32
+		{75BE50AB-D6A1-4A94-ADA9-84CC1C07F98B}.Debug|x86.Build.0 = Debug|Win32
+		{75BE50AB-D6A1-4A94-ADA9-84CC1C07F98B}.Release|x64.ActiveCfg = Release|x64
+		{75BE50AB-D6A1-4A94-ADA9-84CC1C07F98B}.Release|x64.Build.0 = Release|x64
+		{75BE50AB-D6A1-4A94-ADA9-84CC1C07F98B}.Release|x86.ActiveCfg = Release|Win32
+		{75BE50AB-D6A1-4A94-ADA9-84CC1C07F98B}.Release|x86.Build.0 = Release|Win32
+		{18BA08BF-99D1-4379-9E22-FAAEE1AF5C68}.Debug|x64.ActiveCfg = Debug|x64
+		{18BA08BF-99D1-4379-9E22-FAAEE1AF5C68}.Debug|x64.Build.0 = Debug|x64
+		{18BA08BF-99D1-4379-9E22-FAAEE1AF5C68}.Debug|x86.ActiveCfg = Debug|Win32
+		{18BA08BF-99D1-4379-9E22-FAAEE1AF5C68}.Debug|x86.Build.0 = Debug|Win32
+		{18BA08BF-99D1-4379-9E22-FAAEE1AF5C68}.Release|x64.ActiveCfg = Release|x64
+		{18BA08BF-99D1-4379-9E22-FAAEE1AF5C68}.Release|x64.Build.0 = Release|x64
+		{18BA08BF-99D1-4379-9E22-FAAEE1AF5C68}.Release|x86.ActiveCfg = Release|Win32
+		{18BA08BF-99D1-4379-9E22-FAAEE1AF5C68}.Release|x86.Build.0 = Release|Win32
+		{5B409F02-AFC2-42B0-B5B3-58B55466B021}.Debug|x64.ActiveCfg = Debug|x64
+		{5B409F02-AFC2-42B0-B5B3-58B55466B021}.Debug|x64.Build.0 = Debug|x64
+		{5B409F02-AFC2-42B0-B5B3-58B55466B021}.Debug|x86.ActiveCfg = Debug|Win32
+		{5B409F02-AFC2-42B0-B5B3-58B55466B021}.Debug|x86.Build.0 = Debug|Win32
+		{5B409F02-AFC2-42B0-B5B3-58B55466B021}.Release|x64.ActiveCfg = Release|x64
+		{5B409F02-AFC2-42B0-B5B3-58B55466B021}.Release|x64.Build.0 = Release|x64
+		{5B409F02-AFC2-42B0-B5B3-58B55466B021}.Release|x86.ActiveCfg = Release|Win32
+		{5B409F02-AFC2-42B0-B5B3-58B55466B021}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {96EC4187-1C27-4AEA-8C3A-A2C226C1DCFD}
+	EndGlobalSection
+EndGlobal
