@@ -1,5 +1,7 @@
 #include <math.h>
 
+#include <random>
+
 #include "calculation.h"
 #include "triangulation.h"
 #include "utils.h"
@@ -49,53 +51,8 @@ void Triangulation::initPoints(std::vector<HParticle>& init_points) {
   }
 }
 
-/*void Triangulation::calculateParametrs(HParticle& particle,
-                                       std::vector<HParticle>& image_particles,
-                                       const double& box_size) {
-  P3DT3::Tetrahedron tetrahedron;
-  for (P3DT3::Periodic_tetrahedron_iterator ptit =
-           delaunay_triangulation.periodic_tetrahedra_begin(
-               P3DT3::UNIQUE_COVER_DOMAIN);
-       ptit != delaunay_triangulation.periodic_tetrahedra_end(
-                   P3DT3::UNIQUE_COVER_DOMAIN);
-       ++ptit) {
-    tetrahedron = delaunay_triangulation.construct_tetrahedron(*ptit);
-
-    for (int corner = 0; corner < 4; ++corner) {
-      // if index particle lie in the nth corner of the tetrahedron
-      if (tetrahedron[corner].x() == particle.coordinates.x() &&
-          tetrahedron[corner].y() == particle.coordinates.y() &&
-          tetrahedron[corner].z() == particle.coordinates.z()) {
-        int vertex_count = 0;
-        Tetrahedron new_tet = Tetrahedron(tetrahedron);
-        new_tet.initVectorB(corner);
-
-        for (auto& image_particle : image_particles) {
-          int image_corner = 0;
-          if (has_corner(tetrahedron, image_particle, image_corner)) {
-            if (image_particle.coordinates != particle.coordinates &&
-                !isInside(particle.neighbours_points, image_particle)) {
-              particle.neighbours_points.push_back(image_particle);
-            }
-            new_tet.density += image_particle.density / 4;
-            new_tet.temperature += image_particle.temperature / 4;
-            new_tet.velocity += image_particle.velocity / 4;
-
-            if (++vertex_count == 4) break;
-          }
-        }
-
-        particle.volume += new_tet.tetrahedron.volume();
-        particle.tets.push_back(new_tet);
-        break;
-      }
-    }
-  }
-
-  particle.mass = particle.volume * particle.density;
-}*/
-
-void Triangulation::calculateParametrs(const double& box_size) {
+void Triangulation::calculateParametrs(const double& box_size,
+                                       const double& time_step) {
   P3DT3::Tetrahedron tetrahedron;
   for (P3DT3::Periodic_tetrahedron_iterator ptit =
            delaunay_triangulation.periodic_tetrahedra_begin(
@@ -113,6 +70,16 @@ void Triangulation::calculateParametrs(const double& box_size) {
       sum_velocity += tetrahedron[corner].store_el->velocity;
     }
 
+    static std::default_random_engine generator;
+    static std::normal_distribution<double> distribution(0.0, 1.0);
+    double dW[Tetrahedron::matrix_size][Tetrahedron::matrix_size];
+
+    for (int i = 0; i < Tetrahedron::matrix_size; ++i) {
+      for (int j = 0; i < Tetrahedron::matrix_size; ++i) {
+        dW[i][j] = std::sqrt(time_step) * distribution(generator);
+      }
+    }
+
     for (int corner1 = 0; corner1 < 4; ++corner1) {
       if (tetrahedron[corner1].x() < box_size &&
           tetrahedron[corner1].x() >= 0 &&
@@ -125,6 +92,12 @@ void Triangulation::calculateParametrs(const double& box_size) {
         new_tet.density = sum_density / 4;
         new_tet.temperature = sum_tempreture / 4;
         new_tet.velocity = sum_velocity / 4;
+
+        for (int i = 0; i < Tetrahedron::matrix_size; ++i) {
+          for (int j = 0; i < Tetrahedron::matrix_size; ++i) {
+            new_tet.dW[i][j] = dW[i][j];
+          }
+        }
 
         for (int corner2 = 0; corner2 < 4; ++corner2) {
           if (corner1 != corner2 &&
@@ -143,6 +116,12 @@ void Triangulation::calculateParametrs(const double& box_size) {
             n_tet.temperature = new_tet.temperature;
             n_tet.velocity = new_tet.velocity;
             temp->tets = {n_tet};
+
+            for (int i = 0; i < Tetrahedron::matrix_size; ++i) {
+              for (int j = 0; i < Tetrahedron::matrix_size; ++i) {
+                n_tet.dW[i][j] = dW[i][j];
+              }
+            }
 
             tetrahedron[corner1].store_el->neighbours_points.push_back(temp);
             new_tet.particles.push_back(temp);

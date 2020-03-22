@@ -25,6 +25,10 @@ struct Tetrahedron {
   double temperature;
   Gt::Point_3 velocity;
   Gt::Point_3 vectorB;
+
+  static const int matrix_size = 3;
+  double dW[matrix_size][matrix_size];
+
   std::vector<std::shared_ptr<HParticle>> particles;
 
   Tetrahedron(const P3DT3::Tetrahedron& tetrahedron)
@@ -57,10 +61,7 @@ class Triangulation {
 
   void initPoints(std::vector<HParticle>&);
 
-  void calculateParametrs(HParticle&,
-                          std::vector<HParticle>&,
-                          const double& box_size);
-  void calculateParametrs(const double& box_size);
+  void calculateParametrs(const double& box_size, const double& time_step);
 };
 
 #endif  // !TRIANGULATION_H

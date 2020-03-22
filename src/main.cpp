@@ -1,5 +1,6 @@
 #include <fstream>
 #include <iostream>
+#include <random>
 
 #include "calculation.h"
 
@@ -11,7 +12,7 @@ int main() {
   file.open("Result.txt",
             std::fstream::in | std::fstream::out | std::fstream::trunc);
   initParticles(216);
-  startSimulation(2000000, file);
+  startSimulation(1, file);
 
   file.close();
 }
