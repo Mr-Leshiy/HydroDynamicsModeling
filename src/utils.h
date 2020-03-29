@@ -25,7 +25,7 @@ void workingTime(FuncType func, FuncParamType arg) {
 inline double fRand(double fMin, double fMax) {
   double f = (double)rand() / RAND_MAX;
   f = fMin + f * (fMax - fMin);
-  if (f == fMax) return f - 0.0000001;
+  // if (f == fMax) return f - 0.0000001;
   return f;
 }
 

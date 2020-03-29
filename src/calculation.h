@@ -8,6 +8,7 @@
 
 struct HParticle {
   constexpr static double INIT_VELOCITY = -5e-1;
+  // constexpr static double INIT_VELOCITY = 0;
   // constexpr static double INIT_DENSITY = 996.3 / 1.66e3;
   constexpr static double INIT_DENSITY = 1400 / 1.66e3;
   constexpr static double INIT_MASS = 0;

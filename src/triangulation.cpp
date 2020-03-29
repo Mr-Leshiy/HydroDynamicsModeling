@@ -75,7 +75,7 @@ void Triangulation::calculateParametrs(const double& box_size,
     double dW[Tetrahedron::matrix_size][Tetrahedron::matrix_size];
 
     for (int i = 0; i < Tetrahedron::matrix_size; ++i) {
-      for (int j = 0; i < Tetrahedron::matrix_size; ++i) {
+      for (int j = 0; j < Tetrahedron::matrix_size; ++j) {
         dW[i][j] = std::sqrt(time_step) * distribution(generator);
       }
     }
@@ -94,7 +94,7 @@ void Triangulation::calculateParametrs(const double& box_size,
         new_tet.velocity = sum_velocity / 4;
 
         for (int i = 0; i < Tetrahedron::matrix_size; ++i) {
-          for (int j = 0; i < Tetrahedron::matrix_size; ++i) {
+          for (int j = 0; j < Tetrahedron::matrix_size; ++j) {
             new_tet.dW[i][j] = dW[i][j];
           }
         }
