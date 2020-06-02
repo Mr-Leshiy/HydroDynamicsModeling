@@ -113,4 +113,9 @@ inline bool isInside(const std::vector<std::shared_ptr<HParticle>>& particles,
   }
   return false;
 }
+
+inline bool compare_double(const double& a, const double& b) {
+  const static double eps = 0.0000001;
+  return abs(a - b) < eps;
+}
 #endif

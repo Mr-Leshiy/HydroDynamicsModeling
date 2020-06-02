@@ -1,13 +1,15 @@
+#include "calculation.h"
+
 #include <omp.h>
 
 #include <chrono>
 #include <fstream>
 #include <iostream>
 #include <memory>
+#include <random>
 #include <string>
 #include <vector>
 
-#include "calculation.h"
 #include "triangulation.h"
 #include "utils.h"
 
@@ -26,12 +28,13 @@ static double system_mass = 0;
 static Triangulation triangulation;
 
 static const double volume = 60 * 60 * 60;
-static const double time_step = 5;
+static const double time_step = 1;
 static double elapsed_time = 0;
 static const double box_size = std::cbrt(volume);
 static const double bulk_viscosity = 3.0272 / 166;
 static const double shear_viscosity = 9.0898 / 166;
 static const double boltzmann_constant = 1.380649 / 1.66;
+static const double system_tempreture = 86.5;
 
 class Timer {
  public:
@@ -98,7 +101,7 @@ static void pereodicConditions(HParticle& particle) {
                             (int32_t)(particle.coordinates.y() / box_size);
   if (particle.coordinates.y() < 0)
     particle.coordinates += Gt::Point_3(0, box_size, 0) *
-                            int(-particle.coordinates.y() / box_size + 1);
+                            (int32_t)(-particle.coordinates.y() / box_size + 1);
 
   if (particle.coordinates.z() >= box_size)
     particle.coordinates -= Gt::Point_3(0, 0, box_size) *
@@ -108,7 +111,7 @@ static void pereodicConditions(HParticle& particle) {
                             (int32_t)(1 - particle.coordinates.z() / box_size);
 }
 
-static Gt::Point_3 calcForce(const int& index) {
+static Gt::Point_3 calcForce(const int& index, fstream& file, bool display) {
   Gt::Point_3 term1(0, 0, 0);
   Gt::Point_3 term2(0, 0, 0);
 
@@ -118,7 +121,26 @@ static Gt::Point_3 calcForce(const int& index) {
 
   double matrix[Tetrahedron::matrix_size][Tetrahedron::matrix_size];
 
+  if (display) {
+    file << endl;
+    file << "index:( " << index
+         << " ), || tempreture: " << particles[index].temperature
+         << ", || pressure: "
+         << calcPressure(particles[index].density, particles[index].velocity)
+         << " || tets count: " << particles[index].tets.size() << " || ";
+  }
+
   for (const auto& tet : particles[index].tets) {
+    if (display) {
+      file << "||||||||||||||||||||||||" << endl;
+      file << "vec. B: (" << tet.vectorB.x() << ", " << tet.vectorB.y() << ", "
+           << tet.vectorB.z() << " ) || pressure: "
+           << calcPressure(tet.density, particles[index].velocity)
+           << " || volume: " << tet.tetrahedron.volume()
+           << " || tet. velocity: (" << tet.velocity.x() << ", "
+           << tet.velocity.y() << ", " << tet.velocity.z() << " ) || ";
+    }
+
     Gt::Point_3 s1 =
         tet.vectorB * calcPressure(tet.density, particles[index].velocity);
     Gt::Point_3 s2 = tet.velocity * tet.density * (tet.vectorB * tet.velocity);
@@ -193,15 +215,22 @@ static Gt::Point_3 calcForce(const int& index) {
   auto result = (term1 + term2 /*+
                  Gt::Point_3(random_term_x, random_term_y, random_term_z)*/) /
                 particles[index].volume;
+
+  if (display) {
+    file << "||||||||||||||||||||||||||||" << endl;
+    file << " term1: (" << term1.x() << ", " << term1.y() << ", " << term1.z()
+         << " ) || term2: ( " << term2.x() << ", " << term2.y() << ", "
+         << term2.z() << " || " << endl;
+  }
+
   return result;
 }
 
-static void calcNewVelocity(const int& index) {
-  Gt::Point_3 force = calcForce(index);
+static void calcNewVelocity(const int& index, fstream& file, bool display) {
+  Gt::Point_3 force = calcForce(index, file, display);
 
   new_particles[index].velocity =
-      particles[index].velocity +
-      force * time_step / particles[index].volume / particles[index].density;
+      particles[index].velocity + force * time_step / particles[index].density;
   system_velocity += new_particles[index].velocity;
 }
 
@@ -216,6 +245,8 @@ static void calcNewDencity(const int& index) {
 }
 
 static void display_particle(fstream& file, const HParticle& particle) {
+  auto momentum = particle.velocity * (particle.volume * particle.density);
+
   file << fixed;
   file << "coords: (" << particle.coordinates.x() << ", "
        << particle.coordinates.y() << ", " << particle.coordinates.z()
@@ -224,32 +255,52 @@ static void display_particle(fstream& file, const HParticle& particle) {
   file << " mass:" << particle.mass << " \t"
        << " temp:" << particle.temperature << " \t"
        << "density:" << particle.density << " \t"
+       << "volume:" << particle.volume << " \t"
        << "vel: (" << particle.velocity.x() << ", " << particle.velocity.y()
-       << ", " << particle.velocity.z() << ")" << endl
+       << ", " << particle.velocity.z() << ") \t"
+       << "momentum: (" << momentum.x() << ", " << momentum.y() << ", "
+       << momentum.z() << ") \t"
+       << "abs. mom.:"
+       << std::sqrt(momentum.x() * momentum.x() + momentum.y() * momentum.y() +
+                    momentum.z() * momentum.z())
+       << endl
        << "---------" << endl;
 }
 
 static void display_results(fstream& file, const int& iteration) {
   file << "__________________ Series " << iteration << "__________________"
        << endl;
-  double den_avg = 0, mass_avg = 0, temp_avg = 0, vel_avg = 0, mom_avg = 0,
-         volume_avg = 0;
+  double den_avg = 0, sys_mass = 0, temp_avg = 0, vel_avg = 0, mom_avg = 0,
+         sys_volume = 0;
+  size_t tets_count = 0;
+  Gt::Point_3 sys_momentum(0, 0, 0);
   for (int i = 0; i < particles.size(); i++) {
-    mass_avg += (particles[i].density * particles[i].volume) / particles.size();
+    sys_mass += (particles[i].density * particles[i].volume);
     den_avg += particles[i].density / particles.size();
     temp_avg += particles[i].temperature / particles.size();
-    volume_avg += particles[i].volume / particles.size();
+    sys_volume += particles[i].volume;
+    sys_momentum +=
+        particles[i].velocity * (particles[i].volume * particles[i].density);
+    file << "-----[" << i << "]-- sys. mom.: (" << sys_momentum.x() << ", "
+         << sys_momentum.y() << ", " << sys_momentum.z() << ")" << endl;
+
+    tets_count += particles[i].tets.size();
     display_particle(file, particles[i]);
   }
   file << endl
-       << "density: " << den_avg << "\t volume: " << volume_avg
-       << "\t mass: " << mass_avg << "\t temp: " << temp_avg
-       << "\t vel: " << vel_avg << "\t mom: " << mom_avg << "\t syst_vel: ("
-       << system_velocity.x() << ", " << system_velocity.y() << ", "
-       << system_velocity.z() << ")" << endl;
+       << "avg density: " << den_avg << "\t sys volume: " << sys_volume
+       << "\t tets count: " << tets_count << "\t sys mass: " << sys_mass
+       << "\t avg temp: " << temp_avg << "\t vel: " << vel_avg
+       << "\t mom: " << mom_avg << "\t sys_momentum: (" << sys_momentum.x()
+       << ", " << sys_momentum.y() << ", " << sys_momentum.z() << ") \t"
+       << "abs. mom.:"
+       << std::sqrt(sys_momentum.x() * sys_momentum.x() +
+                    sys_momentum.y() * sys_momentum.y() +
+                    sys_momentum.z() * sys_momentum.z())
+       << endl;
 }
 
-static void calculateStep() {
+static void calculateStep(fstream& file, bool display) {
   system_velocity = Gt::Point_3(0, 0, 0);
 
   Timer timer;
@@ -269,9 +320,8 @@ static void calculateStep() {
   printf("CalculateParametrs count, time : %f \n", timer.elapsed());
   timer.reset();
 
-#pragma omp parallel for num_threads(NUM_THREADS)
   for (int i = 0; i < particles.size(); ++i) {
-    calcNewVelocity(i);
+    calcNewVelocity(i, file, display);
     calcNewDencity(i);
   }
 
@@ -280,7 +330,6 @@ static void calculateStep() {
 
   system_velocity /= particles.size();
 
-#pragma omp parallel for num_threads(NUM_THREADS)
   for (int index = 0; index < particles.size(); ++index) {
     new_particles[index].velocity -= system_velocity;
     new_particles[index].coordinates =
@@ -301,16 +350,18 @@ static void swap_and_clear() {
     particles[i].density = new_particles[i].density;
     particles[i].coordinates = new_particles[i].coordinates;
     particles[i].velocity = new_particles[i].velocity;
+    particles[i].volume = 0;
   }
 }
 
-inline double initVelocityCoord(double y, double size) {
-  return sqrt(1 - y / size);
-}
+inline double fn2(double x) { return -162 * x * x + 162; }
 
 void initParticles(int n) {
   particles.resize(n);
   new_particles.resize(n);
+
+  std::default_random_engine generator;
+  std::normal_distribution<double> distribution;
 
   for (int i = 0; i < n; ++i) {
     double x = fRand(0, box_size);
@@ -318,6 +369,9 @@ void initParticles(int n) {
     double z = fRand(0, box_size);
 
     particles[i] = HParticle(x, y, z);
+    particles[i].velocity = Gt::Point_3(distribution(generator),
+                                        distribution(generator),
+                                        distribution(generator));
 
     system_velocity += particles[i].velocity;
   }
@@ -334,12 +388,23 @@ void initParticles(int n) {
 
 void startSimulation(const int& num_iterations, fstream& file) {
   for (int i = 0; i < num_iterations; ++i) {
+    bool display = false;
+    if (i > 360) {
+      display = true;
+    }
+
     printf("-- %d --\n", i);
     Timer timer;
-    calculateStep();
+    file << "__________________ Series " << i << "__________________" << endl;
+    printf("---- values --- \n");
+    calculateStep(file, display);
+    printf("--------");
+    if (display) {
+      display_results(file, i);
+    }
     swap_and_clear();
+    printf("Triangulation... \n");
     triangulation.initPoints(particles);
-    display_results(file, i);
     printf("Iteration , time : %f \n", timer.elapsed());
     timer.reset();
   }

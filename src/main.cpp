@@ -9,10 +9,10 @@ using namespace std;
 int main() {
   fstream file;
   file.precision(5);
-  file.open("Result2.txt",
+  file.open("Result.txt",
             std::fstream::in | std::fstream::out | std::fstream::trunc);
   initParticles(216);
-  startSimulation(1000, file);
+  startSimulation(500, file);
 
   file.close();
 }

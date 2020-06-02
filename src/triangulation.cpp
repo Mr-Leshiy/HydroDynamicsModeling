@@ -1,5 +1,6 @@
 #include <math.h>
 
+#include <iostream>
 #include <random>
 
 #include "calculation.h"
@@ -53,6 +54,12 @@ void Triangulation::initPoints(std::vector<HParticle>& init_points) {
 
 void Triangulation::calculateParametrs(const double& box_size,
                                        const double& time_step) {
+
+  P3DT3::Point_3 devider(delaunay_triangulation.domain().xmax(),
+                         delaunay_triangulation.domain().ymax(),
+                         delaunay_triangulation.domain().zmax());
+
+  auto& domain = delaunay_triangulation.domain();
   P3DT3::Tetrahedron tetrahedron;
   for (P3DT3::Periodic_tetrahedron_iterator ptit =
            delaunay_triangulation.periodic_tetrahedra_begin(
@@ -61,6 +68,7 @@ void Triangulation::calculateParametrs(const double& box_size,
                    P3DT3::UNIQUE_COVER_DOMAIN);
        ++ptit) {
     tetrahedron = delaunay_triangulation.construct_tetrahedron(*ptit);
+
     double sum_density = 0;
     double sum_tempreture = 0;
     Gt::Point_3 sum_velocity(0, 0, 0);
@@ -81,12 +89,12 @@ void Triangulation::calculateParametrs(const double& box_size,
     }
 
     for (int corner1 = 0; corner1 < 4; ++corner1) {
-      if (tetrahedron[corner1].x() < box_size &&
-          tetrahedron[corner1].x() >= 0 &&
-          tetrahedron[corner1].y() < box_size &&
-          tetrahedron[corner1].y() >= 0 &&
-          tetrahedron[corner1].z() < box_size &&
-          tetrahedron[corner1].z() >= 0) {
+      if (tetrahedron[corner1].x() < domain.xmax() &&
+          tetrahedron[corner1].x() >= domain.xmin() &&
+          tetrahedron[corner1].y() < domain.ymax() &&
+          tetrahedron[corner1].y() >= domain.ymin() &&
+          tetrahedron[corner1].z() < domain.zmax() &&
+          tetrahedron[corner1].z() >= domain.zmin()) {
         Tetrahedron new_tet(tetrahedron);
         new_tet.initVectorB(corner1);
         new_tet.density = sum_density / 4;
@@ -128,7 +136,7 @@ void Triangulation::calculateParametrs(const double& box_size,
           }
         }
         tetrahedron[corner1].store_el->tets.push_back(new_tet);
-        tetrahedron[corner1].store_el->volume += tetrahedron.volume();
+        tetrahedron[corner1].store_el->volume += tetrahedron.volume() / 4.0;
       }
     }
   }
