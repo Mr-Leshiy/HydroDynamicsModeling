@@ -1,7 +1,5 @@
 #include "calculation.h"
 
-#include <omp.h>
-
 #include <chrono>
 #include <fstream>
 #include <iostream>
@@ -305,7 +303,6 @@ static void calculateStep(fstream& file, bool display) {
 
   Timer timer;
 
-#pragma omp parallel for num_threads(NUM_THREADS)
   for (int i = 0; i < particles.size(); ++i) {
     particles[i].temperature =
         calcPressure(particles[i].density, particles[i].velocity) * 1e6 /
