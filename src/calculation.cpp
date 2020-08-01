@@ -134,15 +134,15 @@ static Gt::Point_3 calcForce(const int& index, fstream& file, bool display) {
     if (display) {
       file << "||||||||||||||||||||||||" << endl;
       file << "vec. B: (" << tet.vectorB.x() << ", " << tet.vectorB.y() << ", "
-           << tet.vectorB.z() << " ) || pressure: "
-           << calcPressure(tet.density, particles[index].velocity)
+           << tet.vectorB.z()
+           << " ) || pressure: " << calcPressure(tet.density, tet.velocity)
            << " || volume: " << tet.tetrahedron.volume()
-           << " || tet. velocity: (" << tet.velocity.x() << ", "
-           << tet.velocity.y() << ", " << tet.velocity.z() << " ) || ";
+           << " || density: " << tet.density << " || tet. velocity: ("
+           << tet.velocity.x() << ", " << tet.velocity.y() << ", "
+           << tet.velocity.z() << " ) || ";
     }
 
-    Gt::Point_3 s1 =
-        tet.vectorB * calcPressure(tet.density, particles[index].velocity);
+    Gt::Point_3 s1 = tet.vectorB * calcPressure(tet.density, tet.velocity);
     Gt::Point_3 s2 = tet.velocity * tet.density * (tet.vectorB * tet.velocity);
     term1 += (s1 + s2) * tet.tetrahedron.volume();
 
@@ -252,7 +252,7 @@ static void display_particle(fstream& file, const HParticle& particle) {
        << particle.coordinates.y() << ", " << particle.coordinates.z()
        << ")  \t";
   file << scientific;
-  file << " mass:" << particle.mass << " \t"
+  file << " mass:" << particle.volume * particle.density << " \t"
        << " temp:" << particle.temperature << " \t"
        << "density:" << particle.density << " \t"
        << "volume:" << particle.volume << " \t"
@@ -354,8 +354,6 @@ static void swap_and_clear() {
   }
 }
 
-inline double fn2(double x) { return -162 * x * x + 162; }
-
 void initParticles(int n) {
   particles.resize(n);
   new_particles.resize(n);
@@ -389,7 +387,7 @@ void initParticles(int n) {
 void startSimulation(const int& num_iterations, fstream& file) {
   for (int i = 0; i < num_iterations; ++i) {
     bool display = false;
-    if (i > 360) {
+    if (i > 390) {
       display = true;
     }
 
